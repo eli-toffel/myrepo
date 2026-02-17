@@ -1,0 +1,17 @@
+---
+title: "8020 Xcel CPP TOU Evaluability Advising"
+output: html_document
+---
+
+Version: R 4.4.1
+Author: Eli Toffel
+Date: 2026-02-17
+Purpose:
+
+```{r}
+source(housekeeping.R)
+```
+
+```{r}
+summary(df$column)
+```
