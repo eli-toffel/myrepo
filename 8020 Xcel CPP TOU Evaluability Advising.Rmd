@@ -9,9 +9,102 @@ Date: 2026-02-17
 Purpose:
 
 ```{r}
-source(housekeeping.R)
+source("housekeeping.R")
 ```
 
+### Identifying Rate For Each Premise
 ```{r}
-summary(df$column)
+
+## Understanding Variable Traits
+#length(unique(customers$premnum))
+#unique(customers$electric_rate_c)
+#class(customers$electric_rate_c)
+
+## Extracts Type of Rates
+TOD <- grepl("A15|A24", customers$electric_rate_c)
+DemandBilledRate <- grepl("A14|A23|A25|A26|A27", customers$electric_rate_c) & !grepl("A15|A24", customers$electric_rate_c)
+
+
+## Creates Rate Type column
+customers$rate_type <- case_when(
+  TOD ~ "TOD",
+  DemandBilledRate ~ "Demand Billed Rate",
+  TRUE ~ "Not Eligible"
+)
+
+## Orders Table with TOD first and Not Eligible last
+customers$rate_type <- factor(
+  customers$rate_type,
+  levels = c("TOD", "Demand Billed Rate", "Not Eligible")
+)
+
+## Creates Table w/ Total
+#NA is included in Not Eligible
+tbl <- table(customers$rate_type)
+tbl_with_total <- c(tbl,  Total = sum(tbl))
+
+kable(tbl_with_total, caption = "Rate Types")
+
+eligible <- sum(customers$rate_type == "TOD") + sum(customers$rate_type == "Demand Billed Rate")
+not_eligible <- sum(customers$rate_type == "Not Eligible")
+  
+table <- c("Eligible (TOD + Demand Billed Rate)" = eligible, "Not Eligible" = not_eligible, "Total" = sum(eligible + not_eligible))
+library(knitr)
+
+kable(table, caption = "Eligibility Summary")
+
+
+```
+
+### 1000 KW Cutoff
+
+``` {r}
+
+## Summary Stats
+summary(customers$mean_maxkW)
+boxplot(customers$mean_maxkW, horizontal = TRUE)
+
+## High Demand or Low Demand
+# Under or over 1mW
+customers$over_under <- case_when(
+  customers$mean_maxkW > 1000 ~ "Over 1000 kW",
+  customers$mean_maxkW < 1000 ~ "Under 1000 kW",
+  is.na(customers$mean_maxkW) ~ "NA"
+)
+
+#Table
+tbl2 <- table(customers$over_under)
+tbl_with_total2 <- c(tbl2, Total = sum(tbl2))
+tbl_with_total2
+
+## Finer Buckets
+# Defining Bandwidth
+customers$over_under_buckets <- case_when(
+  customers$mean_maxkW > 1000 & customers$mean_maxkW < 1200 ~ "Close Over 1000 kW",
+  customers$mean_maxkW >= 1200 ~ "Far Over 1000 kW",
+  customers$mean_maxkW > 800 & customers$mean_maxkW < 1000 ~ "Close Under 1000 kW",
+  customers$mean_maxkW <= 800 ~ "Far Under 1000 kW",
+  TRUE ~ NA
+)
+
+filtered_demand <- customers[(customers$over_under_buckets == "Close Over 1000 kW"|customers$over_under_buckets == "Close Under 1000 kW"), ]
+
+tbl3 <- table(filtered_demand$over_under)
+tbl_with_total3 <- c(tbl3, Total = sum(tbl3))
+tbl_with_total3
+
+boxplot(filtered_demand$mean_maxkW, horizontal = TRUE)
+
+hist(filtered_demand$mean_maxkW)
+#View(customers)
+
+
+```
+```{r}
+
+
+filtered_TOD <- customers[(customers$rate_type == "TOD"), ]
+
+View(filtered_TOD)
+
 ```

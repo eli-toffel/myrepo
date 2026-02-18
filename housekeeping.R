@@ -9,7 +9,8 @@ packages <- c(
   "readxl",
   "lubridate",
   "janitor",
-  "here"
+  "here",
+  "dplyr"
 )
 
 # Install missing packages
